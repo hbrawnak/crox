@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16
+    ports:
+      - "127.0.0.1:5432:5432"   # only this machine can connect
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-crox}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-crox}   # for local development only
+      POSTGRES_DB: ${DATABASE_NAME:-crox}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  db_data:
