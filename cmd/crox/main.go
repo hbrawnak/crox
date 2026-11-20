@@ -10,6 +10,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/hbrawnak/crox/internal/adapter/httpapi"
 )
 
 func main() {
@@ -29,7 +31,7 @@ func run(log *slog.Logger) error {
 		addr = ":8080"
 	}
 
-	handler := routes()
+	handler := httpapi.NewHandler()
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -65,13 +67,4 @@ func run(log *slog.Logger) error {
 	<-serveErr
 
 	return nil
-}
-
-func routes() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintln(w, `{"status":"ok"}`)
-	})
-	return mux
 }
