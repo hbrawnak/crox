@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/hbrawnak/crox/internal/adapter/httpapi"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -30,6 +32,17 @@ func run(log *slog.Logger) error {
 	if addr == "" {
 		addr = ":8080"
 	}
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		return errors.New("DATABASE_URL is required")
+	}
+
+	pool, err := openDB(ctx, dsn)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	log.Info("database connected")
 
 	handler := httpapi.NewHandler()
 
@@ -67,4 +80,21 @@ func run(log *slog.Logger) error {
 	<-serveErr
 
 	return nil
+}
+
+// openDB creates a connection pool and checks that the database answers.
+func openDB(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		return nil, fmt.Errorf("open database: %w", err)
+	}
+
+	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	if err := pool.Ping(pingCtx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("ping database: %w", err)
+	}
+	return pool, nil
 }

@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:16
     ports:
-      - "127.0.0.1:5432:5432"   # only this machine can connect
+      - "127.0.0.1:${DATABASE_PORT:-5432}:5432" # only this machine can connect
     environment:
       POSTGRES_USER: ${DATABASE_USER:-crox}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-crox}   # for local development only
